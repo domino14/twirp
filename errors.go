@@ -17,28 +17,27 @@
 //
 // For example, a server method may return an InvalidArgumentError:
 //
-//     if req.Order != "DESC" && req.Order != "ASC" {
-//         return nil, twirp.InvalidArgumentError("Order", "must be DESC or ASC")
-//     }
+//	if req.Order != "DESC" && req.Order != "ASC" {
+//	    return nil, twirp.InvalidArgumentError("Order", "must be DESC or ASC")
+//	}
 //
 // And the same twirp.Error is returned by the client, for example:
 //
-//     resp, err := twirpClient.RPCMethod(ctx, req)
-//     if err != nil {
-//         if twerr, ok := err.(twirp.Error); ok {
-//             switch twerr.Code() {
-//             case twirp.InvalidArgument:
-//                 log.Error("invalid argument "+twirp.Meta("argument"))
-//             default:
-//                 log.Error(twerr.Error())
-//             }
-//         }
-//     }
+//	resp, err := twirpClient.RPCMethod(ctx, req)
+//	if err != nil {
+//	    if twerr, ok := err.(twirp.Error); ok {
+//	        switch twerr.Code() {
+//	        case twirp.InvalidArgument:
+//	            log.Error("invalid argument "+twirp.Meta("argument"))
+//	        default:
+//	            log.Error(twerr.Error())
+//	        }
+//	    }
+//	}
 //
 // Clients may also return Internal errors if something failed on the system:
 // the server, the network, or the client itself (i.e. failure parsing
 // response).
-//
 package twirp
 
 import (
@@ -74,16 +73,18 @@ type Error interface {
 }
 
 // code.Error(msg) builds a new Twirp error with code and msg. Example:
-//   twirp.NotFound.Error("Resource not found")
-//   twirp.Internal.Error("Oops")
+//
+//	twirp.NotFound.Error("Resource not found")
+//	twirp.Internal.Error("Oops")
 func (code ErrorCode) Error(msg string) Error {
 	return NewError(code, msg)
 }
 
 // code.Errorf(msg, args...) builds a new Twirp error with code and formatted msg.
 // The format may include "%w" to wrap other errors. Examples:
-//   twirp.Internal.Error("Oops: %w", originalErr)
-//   twirp.NotFound.Error("Resource not found with id: %q", resourceID)
+//
+//	twirp.Internal.Error("Oops: %w", originalErr)
+//	twirp.NotFound.Error("Resource not found with id: %q", resourceID)
 func (code ErrorCode) Errorf(msgFmt string, a ...interface{}) Error {
 	return NewErrorf(code, msgFmt, a...)
 }
@@ -109,8 +110,9 @@ func NewError(code ErrorCode, msg string) Error {
 
 // NewErrorf builds a twirp.Error with a formatted msg.
 // The format may include "%w" to wrap other errors. Examples:
-//   twirp.NewErrorf(twirp.Internal, "Oops: %w", originalErr)
-//   twirp.NewErrorf(twirp.NotFound, "resource with id: %q", resourceID)
+//
+//	twirp.NewErrorf(twirp.Internal, "Oops: %w", originalErr)
+//	twirp.NewErrorf(twirp.NotFound, "resource with id: %q", resourceID)
 func NewErrorf(code ErrorCode, msgFmt string, a ...interface{}) Error {
 	err := fmt.Errorf(msgFmt, a...)      // format error message, may include "%w" with an original error
 	twerr := NewError(code, err.Error()) // use the error as msg
@@ -143,8 +145,9 @@ func InternalError(msg string) Error {
 
 // InternalErrorf uses the formatted message as the internal error msg.
 // The format may include "%w" to wrap other errors. Examples:
-//   twirp.InternalErrorf("database error: %w", err)
-//   twirp.InternalErrorf("failed to load resource %q: %w", resourceID, originalErr)
+//
+//	twirp.InternalErrorf("database error: %w", err)
+//	twirp.InternalErrorf("failed to load resource %q: %w", resourceID, originalErr)
 func InternalErrorf(msgFmt string, a ...interface{}) Error {
 	return NewErrorf(Internal, msgFmt, a...)
 }
@@ -399,9 +402,10 @@ func WriteError(resp http.ResponseWriter, err error) error {
 
 // JSON serialization for errors
 type twerrJSON struct {
-	Code string            `json:"code"`
-	Msg  string            `json:"msg"`
-	Meta map[string]string `json:"meta,omitempty"`
+	Code    string            `json:"code"`
+	Msg     string            `json:"msg"`
+	Message string            `json:"message"`
+	Meta    map[string]string `json:"meta,omitempty"`
 }
 
 // marshalErrorToJSON returns JSON from a twirp.Error, that can be used as HTTP error response body.
@@ -414,9 +418,10 @@ func marshalErrorToJSON(twerr Error) []byte {
 	}
 
 	tj := twerrJSON{
-		Code: string(twerr.Code()),
-		Msg:  msg,
-		Meta: twerr.MetaMap(),
+		Code:    string(twerr.Code()),
+		Msg:     msg,
+		Message: msg,
+		Meta:    twerr.MetaMap(),
 	}
 
 	buf, err := json.Marshal(&tj)
